@@ -9,6 +9,10 @@ For each app, the script will set the corresponding rights for graph or SharePoi
 
 After creating the Apps, a secret value will be created for 24 months for the Authentication App. 
 
+The script will also create 2 new acocunts. 
+* Presence Watcher for Anywhere365
+* EC365 Agent (Test User)
+
 Run script: 
 .\Create-Apps.ps1
 

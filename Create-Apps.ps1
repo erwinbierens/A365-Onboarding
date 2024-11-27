@@ -248,7 +248,8 @@ Log-Message "$($domainsall)"
 # Display summary of app details
 write-host ""
 write-host ""
-Write-Host "Summary of registered applications for $($tenantDomain):" -ForegroundColor Green
+Write-Host "Summary of registered applications for $($tenantDomain):" -ForegroundColor Cyan
+write-host ""
 Write-Host "Tenant ID: $tenantId"
 Write-Host "Initial Domain: $($defaultDomain.Id)"
 Write-Host "SharePoint Admin: https://$($extractedPart)-admin.microsoft.com"
@@ -261,7 +262,7 @@ Write-Host "EC365 Agent Pwd : $($ec365AgentPwd)"
 write-host "------------------------------------"
 write-host "$($app1)"
 write-host "$($uccSiteCreatorAppId)"
-Write-host "NEXT: Upload Self-Signed certificate *.cer file provided by Esprit ICT to app"
+Write-host "NEXT: Upload Self-Signed certificate *.cer file provided by Esprit ICT to app" -ForegroundColor Yellow
 write-host "------------------------------------"
 write-host "$($app2)"
 write-host "$($authAppId)"
@@ -272,7 +273,7 @@ write-host "$($presenceAppId)"
 write-host "------------------------------------"
 write-host "$($app4)"
 write-host "$($pnpAppId)"
-Write-host "NEXT: Upload Self-Signed certificate *.cer file provided by Esprit ICT to app"
+Write-host "NEXT: Upload Self-Signed certificate *.cer file provided by Esprit ICT to app" -ForegroundColor Yellow
 write-host "------------------------------------"
 Write-Host "Domains for WebAgent allow list:"
 Write-host "$($domainsall)"
