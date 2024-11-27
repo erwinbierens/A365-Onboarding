@@ -241,6 +241,13 @@ foreach ($user in $users) {
     Write-Host "User '$($user.displayName)' created successfully with UPN: $($user.userPrincipalName)"
 }
 
+Write-Host "Opening browser with Enterprise App for Anywhere365 Core configurations"
+$clientId = "b087e5fb-3463-46b7-a74d-047a9dee095d"
+$url = "https://login.microsoftonline.com/common/adminconsent?client_id=$clientId"
+ 
+# Open the URL in the default browser
+Start-Process -FilePath $url
+
 
 Log-Message "Summary of registered applications for $($tenantDomain):"
 Log-Message "Tenant ID: $tenantId"
