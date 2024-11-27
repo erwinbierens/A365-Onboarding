@@ -19,10 +19,11 @@ Anywhere365 onboarding script
 This script will create the required App registrations in Entra.
 
 UPDATES:
-1.0     > initial setup of the script.
+1.0    > initial setup of the script.
+1.01   > Added logging to a log file.
 
 .NOTES
-  Version      	   		: 1.0
+  Version      	   		: 1.01
   Author(s)    			: Erwin Bierens
 
 .EXAMPLE
