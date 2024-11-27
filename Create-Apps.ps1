@@ -11,7 +11,6 @@
             | |                                     
             |_|           
 
-			            README
 ******************************************************
 .SYNOPSIS
 Anywhere365 onboarding script
