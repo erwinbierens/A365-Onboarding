@@ -1,3 +1,4 @@
+#Requires -Version 7.4.6
 <#
 ******************************************************
 	        Anywhere365 Onboarding Script
@@ -31,6 +32,7 @@ UPDATES:
 .\Create-Apps.ps1
 #>
 
+
 # Define Parameters
 Param(
     [Parameter(Mandatory = $true)]
@@ -41,7 +43,7 @@ Param(
 # Start with a fresh screen
 Clear-Host
 
-Write-Host "**** Anywhere365 Onboarding Script ****"
+Write-Host "**** Anywhere365 Onboarding Script ****" -ForegroundColor Cyan
 write-host "You will be asked to login multiple times."
 write-host ""
 Function Log-Message([String]$Message)
@@ -57,15 +59,26 @@ $date = Get-Date
 Log-Message "--------------------------------------------------------------------------------------------------"
 Log-Message "Info : New run for customer $($customer)"
 
-Install-Module -Name Microsoft.Graph.authentication -Force
-Install-Module -Name Microsoft.Graph.Applications -Force
-Install-Module -Name Microsoft.Graph.Identity.DirectoryManagement -Force
-Install-module -Name Pnp.PowerShell -Force
+
+# List of modules to install
+$modules = @('Microsoft.Graph.authentication', 'PnP.PowerShell', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.DirectoryManagement')
+
+# Install each module if it's not already installed
+foreach ($module in $modules) {
+    if (-not (Get-Module -ListAvailable -Name $module)) {
+        Install-Module -Name $module -Scope CurrentUser -Force
+        Write-Host "Installed module: $module"
+    } else {
+        Write-Host "Module already installed: $module"
+    }
+}
+
 # Load PnP PowerShell module
 Import-Module PnP.PowerShell
 Import-Module Microsoft.Graph.Authentication
 Import-Module Microsoft.Graph.Identity.DirectoryManagement
 Import-Module Microsoft.Graph.Applications
+
 
 $app1 = "Anywhere 365 Dialogue Cloud - Ucc Site Creator"
 $app2 = "Anywhere 365 Dialogue Cloud - Authentication"
@@ -114,7 +127,12 @@ Catch {
 
 # Register "Anywhere 365 Dialogue Cloud - PnPApp"
 Try {
-    $pnpApp = Register-PnPAzureADApp -ApplicationName $app4 -Tenant $tenantDomain -Interactive -GraphDelegatePermissions "Sites.FullControl.All" -OutPath "$PSScriptRoot\Certs"
+
+    $graphPermissions = @("User.Read.All", "Sites.FullControl.All", "Group.ReadWrite.All")
+    $graphSPAppPermissions = @("User.ReadWrite.All", "Sites.FullControl.All")
+    $graphSPDelAppPermissions = @("AllSites.FullControl")
+
+    $pnpApp = Register-PnPAzureADApp -ApplicationName $app4 -Tenant $tenantDomain -Interactive -GraphApplicationPermissions $graphPermissions -SharePointApplicationPermissions $graphSPAppPermissions -SharePointDelegatePermissions $graphSPDelAppPermissions -OutPath "$PSScriptRoot\Certs"
     $pnpAppId = $pnpApp.("AzureAppId/ClientId")
     Write-Host "Registered 'Anywhere 365 Dialogue Cloud - PnPApp' with App ID: $($pnpAppId)"
     Log-Message "Registered 'Anywhere 365 Dialogue Cloud - PnPApp' with App ID: $($pnpAppId)"
@@ -258,7 +276,7 @@ Write-Host "Summary of registered applications for $($tenantDomain):" -Foregroun
 write-host ""
 Write-Host "Tenant ID: $tenantId"
 Write-Host "Initial Domain: $($defaultDomain.Id)"
-Write-Host "SharePoint Admin: https://$($extractedPart)-admin.microsoft.com"
+Write-Host "SharePoint Admin: https://$($extractedPart)-admin.sharepoint.com"
 Write-Host "SharePoint site: https://$($extractedPart).sharepoint.com"
 write-host "------------------------------------"
 Write-Host "Anywhere 365 Presence User: a365-PresenceWatcher@$($initialUserDomain)"
