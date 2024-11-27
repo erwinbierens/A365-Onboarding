@@ -37,7 +37,7 @@ Param(
     [string]$customer
 )
 # Start with a fresh screen
-clear
+Clear-Host
 
 Write-Host "**** Anywhere365 Onboarding Script ****"
 write-host "You will be asked to login multiple times."
@@ -120,16 +120,19 @@ Catch {
 
 Write-host "Sleeping for 30 seconds.."
 Log-Message "Sleeping for 30 seconds.."
-Sleep 30
+Start-Sleep 30
 
 # Creating secret for App "Anywhere 365 Dialogue Cloud - Authentication"
 # Connect to Microsoft Graph
-Connect-MgGraph -Scopes "Application.ReadWrite.All" -NoWelcome
+Connect-MgGraph -Scopes "Application.ReadWrite.All", "Directory.Read.All", "User.ReadWrite.All" -NoWelcome
 
 # Search for the application by its display name
 $appName = "Anywhere 365 Dialogue Cloud - Authentication"
 $app = Get-MgApplication -Filter "displayName eq '$appName'"
 Log-Message "Finding the app $($app) in Entra"
+
+# Grab tenant Id from app registration
+$tenantId = (Get-MgContext).TenantId
 
 # Check if the app exists and retrieve the App ID
 if ($app) {
@@ -150,8 +153,81 @@ if ($app) {
     Log-Message "Application not found"
 }
 
+#now let's grab the domains from the tenant:
+# Get the domains and filter for the default one
+$domains = Get-MgDomain
+$defaultDomain = $domains | Where-Object { $_.IsInitial -eq $true }
+$initialUserDomain = ($domains | Where-Object { $_.IsInitial -eq $true }).Id
+$defaultUserDomain = ($domains | Where-Object { $_.IsDefault -eq $true }).Id
+
+$domainsall = $domains.id
+
+Write-Host "Initial Domain: $($defaultDomain.Id)"
+Log-Message "Initial Domain: $($defaultDomain.Id)"
+
+Write-Host "All Domains:"
+Write-Host "$($domainsall)"
+
+# Extract the part before '.onmicrosoft.com'
+if ($defaultDomain -and $defaultDomain.Id -match "^(.*?)\.onmicrosoft\.com$") {
+    $extractedPart = $matches[1]
+    Write-Host "Extracted Part: $extractedPart"
+} else {
+    Write-Host "Default domain does not match the expected pattern"
+}
+
+Write-Host "This script requires a password for the Presence Watcher user. Please provide a secure password when prompted." -ForegroundColor Yellow
+$presencePwd = Read-Host "Please enter password for the Presence Watcher user.."
+Write-Host "This script requires a password for the EC365 Agent user. Please provide a secure password when prompted." -ForegroundColor Yellow
+$ec365AgentPwd = Read-Host "Please enter password for the EC365 Agent user.."
+
+#create 2 users
+# Define User Data for Both Users
+$users = @(
+    @{
+        displayName = "Anywhere365 Presence Watcher"
+        userPrincipalName = "a365-PresenceWatcher@$($initialUserDomain)"
+        mailNickname = "a365-PresenceWatcher"
+        password = "$presencePwd"
+    },
+    @{
+        displayName = "EC365 Agent"
+        userPrincipalName = "ec365.agent@$($defaultUserDomain)"
+        mailNickname = "ec365.Agent"
+        password = "$ec365AgentPwd"
+    }
+)
+
+# Step 3: Create Users
+foreach ($user in $users) {
+    $body = @{
+        accountEnabled = $true
+        displayName = $user.displayName
+        mailNickname = $user.mailNickname
+        userPrincipalName = $user.userPrincipalName
+        passwordProfile = @{
+            forceChangePasswordNextSignIn = $false
+            password = $user.password
+        }
+        passwordPolicies = "DisablePasswordExpiration"
+    }
+
+    # Create the user using Microsoft Graph API
+    Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/v1.0/users" -Body ($body | ConvertTo-Json -Depth 10)
+    Write-Host "User '$($user.displayName)' created successfully with UPN: $($user.userPrincipalName)"
+}
+
 
 Log-Message "Summary of registered applications for $($tenantDomain):"
+Log-Message "Tenant ID: $tenantId"
+Log-Message "Initial Domain: $($defaultDomain.Id)"
+Log-Message "SharePoint Admin: https://$($extractedPart)-admin.microsoft.com"
+Log-Message "SharePoint site: https://$($extractedPart).sharepoint.com"
+Log-Message "------------------------------------"
+Log-Message "Anywhere 365 Presence User: a365-PresenceWatcher@$($initialDomain)"
+Log-Message "Anywhere 365 Presence Pwd : $($presencePwd)"
+Log-Message "EC365 Agent User: ec365.agent@$($defaultDomain)"
+Log-Message "EC365 Agent Pwd : $($ec365AgentPwd)"
 Log-Message "------------------------------------"
 Log-Message "$($app1)"
 Log-Message "$($uccSiteCreatorAppId)"
@@ -166,11 +242,22 @@ Log-Message "------------------------------------"
 Log-Message "$($app4)"
 Log-Message "$($pnpAppId)"
 Log-Message "------------------------------------"
+Log-Message "Domains for WebAgent allow list:"
+Log-Message "$($domainsall)"
 
 # Display summary of app details
 write-host ""
 write-host ""
 Write-Host "Summary of registered applications for $($tenantDomain):" -ForegroundColor Green
+Write-Host "Tenant ID: $tenantId"
+Write-Host "Initial Domain: $($defaultDomain.Id)"
+Write-Host "SharePoint Admin: https://$($extractedPart)-admin.microsoft.com"
+Write-Host "SharePoint site: https://$($extractedPart).sharepoint.com"
+write-host "------------------------------------"
+Write-Host "Anywhere 365 Presence User: a365-PresenceWatcher@$($initialDomain)"
+Write-Host "Anywhere 365 Presence Pwd : $($presencePwd)"
+Write-Host "EC365 Agent User: ec365.agent@$($defaultDomain)"
+Write-Host "EC365 Agent Pwd : $($ec365AgentPwd)"
 write-host "------------------------------------"
 write-host "$($app1)"
 write-host "$($uccSiteCreatorAppId)"
@@ -187,3 +274,5 @@ write-host "$($app4)"
 write-host "$($pnpAppId)"
 Write-host "NEXT: Upload Self-Signed certificate *.cer file provided by Esprit ICT to app"
 write-host "------------------------------------"
+Write-Host "Domains for WebAgent allow list:"
+Write-host "$($domainsall)"
