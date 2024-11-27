@@ -17,7 +17,7 @@ The script will also create 2 new acocunts.
 
 * PowerShell 7 (Link)[https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.4]
 * Microsoft365 Global Admin Rights
-* 1, E1/E3 with Phone System or E5 License
+* 1x , E1/E3 with Phone System or E5 License
 
 ## Run script
 Make sure to set your execution policy for this script.

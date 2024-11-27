@@ -57,10 +57,10 @@ $date = Get-Date
 Log-Message "--------------------------------------------------------------------------------------------------"
 Log-Message "Info : New run for customer $($customer)"
 
-Install-Module -Name Microsoft.Graph.authentication
-Install-Module -Name Microsoft.Graph.Applications
-Install-Module -Name Microsoft.Graph.Identity.DirectoryManagement
-Install-module -Name Pnp.PowerShell
+Install-Module -Name Microsoft.Graph.authentication -Force
+Install-Module -Name Microsoft.Graph.Applications -Force
+Install-Module -Name Microsoft.Graph.Identity.DirectoryManagement -Force
+Install-module -Name Pnp.PowerShell -Force
 # Load PnP PowerShell module
 Import-Module PnP.PowerShell
 Import-Module Microsoft.Graph.Authentication
