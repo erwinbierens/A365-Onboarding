@@ -21,9 +21,10 @@ This script will create the required App registrations in Entra.
 UPDATES:
 1.0    > initial setup of the script.
 1.01   > Added logging to a log file.
+1.02   > Added the extra Graph Powershell modules.
 
 .NOTES
-  Version      	   		: 1.01
+  Version      	   		: 1.02
   Author(s)    			: Erwin Bierens
 
 .EXAMPLE
@@ -57,10 +58,14 @@ Log-Message "-------------------------------------------------------------------
 Log-Message "Info : New run for customer $($customer)"
 
 Install-Module -Name Microsoft.Graph.authentication
+Install-Module -Name Microsoft.Graph.Applications
+Install-Module -Name Microsoft.Graph.Identity.DirectoryManagement
 Install-module -Name Pnp.PowerShell
 # Load PnP PowerShell module
 Import-Module PnP.PowerShell
 Import-Module Microsoft.Graph.Authentication
+Import-Module Microsoft.Graph.Identity.DirectoryManagement
+Import-Module Microsoft.Graph.Applications
 
 $app1 = "Anywhere 365 Dialogue Cloud - Ucc Site Creator"
 $app2 = "Anywhere 365 Dialogue Cloud - Authentication"
