@@ -19,6 +19,7 @@ Make sure to set your execution policy for this script.
     Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
 
 **Run script:**
+
     .\Create-Apps.ps1
 
 The required role in Microsft 365 to create Apps and users is Global Admin.
