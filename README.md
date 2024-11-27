@@ -19,10 +19,9 @@ Make sure to set your execution policy for this script.
     Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
 
 **Run script:**
+The required role in Microsft 365 to create Apps and users is Global Admin.
 
     .\Create-Apps.ps1
-
-The required role in Microsft 365 to create Apps and users is Global Admin.
 
 ## After running the scripts
 After running the scripts, please provide your Esprit ICT consultant the Certs and log file. 
