@@ -1,4 +1,4 @@
-# README
+# Anywhere365 Onboarding
 This script will create 4 App registrations in your Microsoft 365 tenant:
 * Anywhere 365 Dialogue Cloud - Ucc Site Creator
 * Anywhere 365 Dialogue Cloud - Authentication
@@ -13,15 +13,17 @@ The script will also create 2 new acocunts.
 * Presence Watcher for Anywhere365
 * EC365 Agent (Test User)
 
+## Run script
+Make sure to set your execution policy for this script.
 
-Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+    Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
 
 **Run script:**
-.\Create-Apps.ps1
+    .\Create-Apps.ps1
 
 The required role in Microsft 365 to create Apps and users is Global Admin.
 
-# After running the scripts
+## After running the scripts
 After running the scripts, please provide your Esprit ICT consultant the Certs and log file. 
 
 **ToDo** 
