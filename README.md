@@ -13,8 +13,18 @@ The script will also create 2 new acocunts.
 * Presence Watcher for Anywhere365
 * EC365 Agent (Test User)
 
-Run script: 
+
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+
+**Run script:**
 .\Create-Apps.ps1
 
+The required role in Microsft 365 to create Apps and users is Global Admin.
+
+# After running the scripts
 After running the scripts, please provide your Esprit ICT consultant the Certs and log file. 
-The required role to create scripts is Global Admin.
+
+**ToDo** 
+* Assign License to EC365 Agent user (E1/E3 with Phone System or E5)
+* Assign Cert (Provided by consultant) to the Ucc Site Creator and PnPApp. 
+* Exclude Presence Watcher user from MFA
