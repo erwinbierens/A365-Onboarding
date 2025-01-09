@@ -22,9 +22,12 @@ UPDATES:
 1.0    > initial setup of the script.
 1.01   > Added logging to a log file.
 1.02   > Added the extra Graph Powershell modules.
+1.03   > added check for powershell modules and install them if not present.
+1.04   > added Enterprise App links for Anywhere Attendant Console and Core configurations.
+1.05   > changed the Graph API module to Microsoft.Graph. Added Certificates directorty creation.
 
 .NOTES
-  Version      	   		: 1.02
+  Version      	   		: 1.05
   Author(s)    			: Erwin Bierens
 
 .EXAMPLE
@@ -43,6 +46,7 @@ Param(
 Clear-Host
 
 Write-Host "**** Anywhere365 Onboarding Script ****" -ForegroundColor Cyan
+Write-host "This script will create all nessasary app registrations and accounts.."
 write-host "You will be asked to login multiple times."
 write-host ""
 Function Log-Message([String]$Message)
@@ -55,22 +59,67 @@ Function Log-Message([String]$Message)
 }
 
 $date = Get-Date
+
+# Define the directory path
+$LogDirectory = ".\Certificates"
+
+# Check if the directory exists
+if (-not (Test-Path -Path $LogDirectory)) {
+    # Create the directory
+    New-Item -Path $LogDirectory -ItemType Directory -Force
+    Write-Host "Directory 'Certificates' created successfully."
+} else {
+    Write-Host "Directory 'Certificates' already exists."
+}
+
 Log-Message "--------------------------------------------------------------------------------------------------"
 Log-Message "Info : New run for customer $($customer)"
 
 
-# List of modules to install
-$modules = @('Microsoft.Graph.authentication', 'PnP.PowerShell', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.DirectoryManagement')
 
-# Install each module if it's not already installed
+# List of modules to install with required versions
+$modules = @(
+    @{ Name = 'Microsoft.Graph'; Version = '2.25.0' },
+    @{ Name = 'PnP.PowerShell'; Version = '2.12.0' }
+)
+
+# Install or update each module if necessary
 foreach ($module in $modules) {
-    if (-not (Get-Module -ListAvailable -Name $module)) {
-        Install-Module -Name $module -Scope CurrentUser -Force
-        Write-Host "Installed module: $module"
+    $installedModule = Get-Module -ListAvailable -Name $module.Name | Sort-Object Version -Descending | Select-Object -First 1
+    
+    if (-not $installedModule) {
+        # Module not installed, install it
+        Install-Module -Name $module.Name -RequiredVersion $module.Version -Scope CurrentUser -Force
+        Write-Host "Installed module: $($module.Name) version $($module.Version)"
+    } elseif ($installedModule.Version -lt [version]$module.Version) {
+        #first uninstall all modules:
+        Uninstall-Module Microsoft.Graph -AllVersions -Force
+        # Installed version is older, update the module
+        Install-Module -Name $module.Name -RequiredVersion $module.Version -Scope CurrentUser -Force
+        Write-Host "Updated module: $($module.Name) to version $($module.Version)"
+        Write-host -ForegroundColor yellow "Please restart the script to activate the new modules"
+        exit 1
     } else {
-        Write-Host "Module already installed: $module"
+        # Installed version is up-to-date
+        Write-Host "Module $($module.Name) is already up-to-date (version $($installedModule.Version))"
     }
 }
+
+
+
+# List of modules to install
+#$modules = @('Microsoft.Graph.authentication', 'PnP.PowerShell', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.DirectoryManagement')
+
+
+# Install each module if it's not already installed
+# foreach ($module in $modules) {
+#    if (-not (Get-Module -ListAvailable -Name $module)) {
+#        Install-Module -Name $module -Scope CurrentUser -Force
+#        Write-Host "Installed module: $module"
+#    } else {
+#        Write-Host "Module already installed: $module"
+#    }
+#}
 
 # Load PnP PowerShell module
 Import-Module PnP.PowerShell
@@ -86,7 +135,7 @@ $app4 = "Anywhere 365 Dialogue Cloud - PnPApp"
 
 # Register "Anywhere 365 Dialogue Cloud - Ucc Site Creator"
 Try {
-    $uccSiteCreatorApp = Register-PnPAzureADApp -ApplicationName $app1 -Tenant $tenantDomain -Interactive -SharePointApplicationPermissions "Sites.Selected" -OutPath "$PSScriptRoot\Certs"
+    $uccSiteCreatorApp = Register-PnPAzureADApp -ApplicationName $app1 -Tenant $tenantDomain -Interactive -SharePointApplicationPermissions "Sites.Selected" -OutPath "$PSScriptRoot\Certificates"
     $uccSiteCreatorAppId = $uccSiteCreatorApp.("AzureAppId/ClientId")
     Write-Host "Registered 'Anywhere 365 Dialogue Cloud - Ucc Site Creator' with App ID: $($uccSiteCreatorAppId)"
     Log-Message "Registered 'Anywhere 365 Dialogue Cloud - Ucc Site Creator' with App ID: $($uccSiteCreatorAppId)"
@@ -99,7 +148,7 @@ Catch {
 # Register "Anywhere 365 Dialogue Cloud - Authentication"
 Try {
 
-    $authApp = Register-PnPAzureADApp -ApplicationName $app2 -Tenant $tenantDomain -Interactive -GraphApplicationPermissions "Sites.FullControl.All" -OutPath "$PSScriptRoot\Certs"
+    $authApp = Register-PnPAzureADApp -ApplicationName $app2 -Tenant $tenantDomain -Interactive -GraphApplicationPermissions "Sites.FullControl.All" -OutPath "$PSScriptRoot\Certificates"
     $authAppId = $authApp.("AzureAppId/ClientId")
     Write-Host "Registered 'Anywhere 365 Dialogue Cloud - Authentication' with App ID: $($authAppId)"
     Log-Message "Registered 'Anywhere 365 Dialogue Cloud - Authentication' with App ID: $($authAppId)"
@@ -114,7 +163,7 @@ Try {
     # Define Graph delegate permissions array
     $graphPermissions = @("User.Read.All", "Directory.Read.All", "Presence.Read.All")
 
-    $presenceApp = Register-PnPAzureADApp -ApplicationName $app3 -Tenant $tenantDomain -Interactive -GraphDelegatePermissions $graphPermissions -OutPath "$PSScriptRoot\Certs"
+    $presenceApp = Register-PnPAzureADApp -ApplicationName $app3 -Tenant $tenantDomain -Interactive -GraphDelegatePermissions $graphPermissions -OutPath "$PSScriptRoot\Certificates"
     $presenceAppId = $presenceApp.("AzureAppId/ClientId")
     Write-Host "Registered 'Anywhere 365 Dialogue Cloud - Presence' with App ID: $($presenceAppId)"
     Log-Message "Registered 'Anywhere 365 Dialogue Cloud - Presence' with App ID: $($presenceAppId)"
@@ -131,7 +180,7 @@ Try {
     $graphSPAppPermissions = @("User.ReadWrite.All", "Sites.FullControl.All")
     $graphSPDelAppPermissions = @("AllSites.FullControl")
 
-    $pnpApp = Register-PnPAzureADApp -ApplicationName $app4 -Tenant $tenantDomain -Interactive -GraphApplicationPermissions $graphPermissions -SharePointApplicationPermissions $graphSPAppPermissions -SharePointDelegatePermissions $graphSPDelAppPermissions -OutPath "$PSScriptRoot\Certs"
+    $pnpApp = Register-PnPAzureADApp -ApplicationName $app4 -Tenant $tenantDomain -Interactive -GraphApplicationPermissions $graphPermissions -SharePointApplicationPermissions $graphSPAppPermissions -SharePointDelegatePermissions $graphSPDelAppPermissions -OutPath "$PSScriptRoot\Certificates"
     $pnpAppId = $pnpApp.("AzureAppId/ClientId")
     Write-Host "Registered 'Anywhere 365 Dialogue Cloud - PnPApp' with App ID: $($pnpAppId)"
     Log-Message "Registered 'Anywhere 365 Dialogue Cloud - PnPApp' with App ID: $($pnpAppId)"
@@ -190,6 +239,8 @@ Log-Message "Initial Domain: $($defaultDomain.Id)"
 
 Write-Host "All Domains:"
 Write-Host "$($domainsall)"
+Log-Message "All Domains:"
+Log-Message "$($domainsall)"
 
 # Extract the part before '.onmicrosoft.com'
 if ($defaultDomain -and $defaultDomain.Id -match "^(.*?)\.onmicrosoft\.com$") {
@@ -197,6 +248,7 @@ if ($defaultDomain -and $defaultDomain.Id -match "^(.*?)\.onmicrosoft\.com$") {
     Write-Host "Extracted Part: $extractedPart"
 } else {
     Write-Host "Default domain does not match the expected pattern"
+    Log-Message "Default domain does not match the expected pattern"
 }
 
 Write-Host "This script requires a password for the Presence Watcher user. Please provide a secure password when prompted." -ForegroundColor Yellow
@@ -242,6 +294,13 @@ foreach ($user in $users) {
 
 Write-Host "Opening browser with Enterprise App for Anywhere365 Core configurations"
 $clientId = "b087e5fb-3463-46b7-a74d-047a9dee095d"
+$url = "https://login.microsoftonline.com/common/adminconsent?client_id=$clientId"
+ 
+# Open the URL in the default browser
+Start-Process -FilePath $url
+
+Write-Host "Opening browser with Enterprise App for Anywhere365 Attendant Console"
+$clientId = "b49e1919-ca4f-4a60-bae4-24bb7b231f97"
 $url = "https://login.microsoftonline.com/common/adminconsent?client_id=$clientId"
  
 # Open the URL in the default browser
@@ -307,3 +366,7 @@ Write-host "NEXT: Upload Self-Signed certificate *.cer file provided by Esprit I
 write-host "------------------------------------"
 Write-Host "Domains for WebAgent allow list:"
 Write-host "$($domainsall)"
+write-host ""
+write-host ""
+write-host ""
+write-host "TODO: Add a365-PresenceWatcher@$($initialUserDomain) to MFA Exclusion" -ForegroundColor Yellow
